@@ -11,3 +11,6 @@
   Log actions from users.
   
   Reporting.
+
+
+## License: LICENSE.txt 
