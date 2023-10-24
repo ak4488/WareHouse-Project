@@ -1,64 +1,75 @@
-"""Command line interface to query the stock.
-
-To iterate the source data you can use the following structure:
-
-for item in warehouse1:
-    # Your instructions here.
-    # The `item` name will contain each of the strings (item names) in the list.
-"""
-
-from data import warehouse1, warehouse2
-
-# YOUR CODE STARTS HERE
-
-
-# Get the user name
-# Greet the user
-# Show the menu and ask to pick a choice
+from data import stock
+from datetime import datetime
+from collections import OrderedDict
 
 name = input("What is your user name? ")
 print("\n")
 
-print(f"Hello, {name}!\nWhat would you like to do?\n1. List items by warehouse\n2. Search an item and place an order\n3. Quit")
+print(f"Hello, {name}!\nWhat would you like to do?\n1. List items by warehouse\n2. Search an item and place an order\n3. Browse by category\n4. Quit")
 operation = input("Type the number of the operation: ")
 
 errorr = False
 if operation == "1":
-    print("Items in warehouse 1:")
-    for item in warehouse1:
-        print(f"- {item}")
-    print("Items in warehouse 2:")
-    for item in warehouse2:
-        print(f"- {item}")
+    print("Items in warehouse 1:") 
+    count = 0
+    count2 = 0
+    for i in range(len(stock)):
+        if stock[i]["warehouse"] == 1:
+            print(f"- {stock[i]['state']} {stock[i]['category']}")
+            count+=1
+    print("\nItems in warehouse 2:") 
+    for i in range(len(stock)):
+        if stock[i]["warehouse"] == 2:
+            print(f"- {stock[i]['state']} {stock[i]['category']}")
+            count2+=1
+    print(f"\nTotal items in warehouse 1: {count}")
+    print(f"Total items in warehouse 2: {count2}")
+
 elif operation == "2":
     print("\n")
-    itemname = input("What is the name of the item? ")
-    howmany = warehouse1.count(itemname)
-    howmany2 = warehouse2.count(itemname)
+    itemname = input("What is the name of the item? ") ## taking item name lowered
+    countm = 0
+    full_answer = ""
+    first_w = 0
+    second_w = 0
+    for i in range(len(stock)):
+        fullname = stock[i]['state'] + " " + stock[i]['category']
+        if fullname.lower() == itemname.lower():
+            countm+=1
+            if stock[i]['warehouse'] == 1:
+                first_w += 1
+            if stock[i]['warehouse'] == 2:
+                second_w += 1  
+            date_stock = datetime.strptime(stock[i]['date_of_stock'], '%Y-%m-%d %H:%M:%S')
+            time_passed = str(datetime.now() - date_stock)
+            days_passed = time_passed.split(",").pop(0)
+            full_answer += f"- Warehouse {stock[i]['warehouse']} (in stock for {days_passed})\n"  
 
-    both = howmany + howmany2
-
-    print(f"Ammount available: {both}")
-    if howmany > 0 and howmany2 > 0:
-        print("Location: Both warehouses")
-        if howmany >= howmany2:
-            print(f"Maximum availability: {howmany} in Warehouse 1")
-        else:
-            print(f"Maximum availability: {howmany2} in Warehouse 2")
-
-    elif howmany > 0 and howmany2 < 1:
-        print("Location: Warehouse 1")
-    elif howmany < 1 and howmany2 > 0:
-        print("Location: warehouse 2")
-    else: 
+    if countm == 0:
+        full_answer = "Not is stock"
         errorr = True
-        print("Location: Not in stock")
-    
+    print(f"Ammount available: {countm}")
+    print("Location:")
+    print(full_answer)
+    if first_w > 0 and second_w > 0:
+        max_awail = 0
+        wareh = 0
+        if first_w > second_w:
+            wareh = 1
+            max_awail = first_w
+        elif first_w < second_w:
+            wareh = 2
+            max_awail = second_w
+        elif first_w == second_w:
+            wareh = 1
+            max_awail = first_w
+        print(f"Maximum availability: {max_awail} in Warehouse {wareh}")
 
-    print("\n")
     if errorr is not True:
+        print("\n")
         order = input("Would you like to order this item? (y/n) ")
         if order.lower() == "y":
+            both = first_w + second_w
             howmanyorder = int(input("How many would you like? "))
             if howmanyorder <= both and howmanyorder > 0:
                 print(f"{howmanyorder} {itemname} have been ordered.\n")
@@ -69,17 +80,37 @@ elif operation == "2":
                 ordermaximum = input("Would you like to order the maximum available? (y/n) ")
                 if ordermaximum.lower() == "y":
                     print(f"{both} {itemname} have been ordered.\n")
+
 elif operation == "3":
+        
+        categories = OrderedDict()
+        for item in stock:
+            if item["category"] not in categories.keys():
+                categories[item["category"]] = 0
+            categories[item["category"]] += 1
+      
+        num = 1
+        for category, amount in categories.items():
+            print(f"{num}. {category} ({amount})")
+            num += 1
+
+        chosen_number = int(input("Type the number of the category to browse: "))
+        category_list = list(categories.items())
+        chosen_name = category_list[chosen_number - 1][0]
+        print("\n")
+        print(f"List of {chosen_name.lower()}'s available:")
+        for item in stock:
+            if item["category"] == chosen_name:
+                full_name = f"{item['state']} {item['category'].lower()}"
+                print(f"{full_name}, Warehouse {item['warehouse']}")
+
+elif operation == "4":
     pass
 else:
-    print("********************************************")
+    print("*" * 40)
     print(f"{operation} is not a valid operation!")
-    print("********************************************")
-
-
-
+    print("*" * 40)
 
 
 # Thank the user for the visit
 print(f"\nThank you for your visit, {name}!")
-
