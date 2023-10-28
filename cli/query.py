@@ -6,9 +6,10 @@ from collections import OrderedDict
 parameters = {
     "is_authenticated": False,
     "user_name": None,
-    "password": None
+    "password": None,
+    "how_much_entries": 0
 }
-
+summary = []
 def get_user_name():
     return input("What is your user name? ")
 
@@ -44,14 +45,14 @@ def list_items_on_all_warehouses():
     print()
     print("Total items in warehouse 1:", count)
     total = count
+    total_warehouses = 1
     for warehouse_id, items in other_warehouses.items():
         total_warehouse = len(items)
         total = total + total_warehouse
+        total_warehouses+=1
         print(f"Total items in warehouse {warehouse_id}:", total_warehouse)
-
-    
-
-
+    summary.append(f"Listed {total} items in {total_warehouses} warehouses")
+    parameters['how_much_entries'] +=1
 
 def print_warehouse_list(warehouse):
     for item in warehouse:
@@ -60,9 +61,6 @@ def print_warehouse_list(warehouse):
         days_passed = time_passed.split(",").pop(0)
         stock_text = f"in stock for {days_passed}"
         print(f"- Warehouse {item['warehouse']} ({stock_text})")
-
-
-
 
 def print_results(**warehouses):
 
@@ -106,10 +104,6 @@ def only_for_users(func):
                     inner(*args, **kwargs)
     return inner
 
-
-
-
-
 def order_an_item(searched_item, **warehouses):
     totals = [len(items) for items in warehouses.values()]
     total_amount = sum(totals)
@@ -134,7 +128,8 @@ def place_an_order(searched_item, total_amount):
     if amount <= total_amount:
         print(amount, searched_item, "have been ordered.")
 
-
+    summary.append(f"Ordered {amount} {searched_item}")
+    parameters["how_much_entries"] += 1
 
 def search_item(searched_item):
     results = {}
@@ -153,115 +148,69 @@ def search_and_order_item():
 
     print_results(**search_results)
 
+    summary.append(f"Searched for item {searched_item}")
     order_an_item(searched_item=searched_item, **search_results)
 
-    return searched_item
+    parameters['how_much_entries'] +=1
 
+def ordered_dict():
+    categories = OrderedDict()
+    for item in stock:
+        if item["category"] not in categories.keys():
+            categories[item["category"]] = 0
+        categories[item["category"]] += 1
+        
+    num = 1
+    for category, amount in categories.items():
+        print(f"{num}. {category} ({amount})")
+        num += 1
 
-""" #OLD Version
-def search_and_order_on_warehouses():
+    chosen_number = int(input("Type the number of the category to browse: "))
+    category_list = list(categories.items())
+    chosen_name = category_list[chosen_number - 1][0]
     print("\n")
-    itemname = input("What is the name of the item? ") 
-    errorr = False
-    countm = 0
-    full_answer = ""
-    first_w = 0
-    second_w = 0
-    for i in range(len(stock)):
-        fullname = stock[i]['state'] + " " + stock[i]['category']
-        if fullname.lower() == itemname.lower():
-            countm+=1
-            if stock[i]['warehouse'] == 1:
-                first_w += 1
-            if stock[i]['warehouse'] == 2:
-                second_w += 1  
-            date_stock = datetime.strptime(stock[i]['date_of_stock'], '%Y-%m-%d %H:%M:%S')
-            time_passed = str(datetime.now() - date_stock)
-            days_passed = time_passed.split(",").pop(0)
-            full_answer += f"- Warehouse {stock[i]['warehouse']} (in stock for {days_passed})\n"  
+    print(f"List of {chosen_name.lower()}'s available:")
+    for item in stock:
+        if item["category"] == chosen_name:
+            full_name = f"{item['state']} {item['category'].lower()}"
+            print(f"{full_name}, Warehouse {item['warehouse']}")
+    summary.append(f"Searched in category {category}")
 
-    if countm == 0:
-        full_answer = "Not is stock"
-        errorr = True
-    print(f"Ammount available: {countm}")
-    print("Location:")
-    print(full_answer)
-    if first_w > 0 and second_w > 0:
-        max_awail = 0
-        wareh = 0
-        if first_w > second_w:
-            wareh = 1
-            max_awail = first_w
-        elif first_w < second_w:
-            wareh = 2
-            max_awail = second_w
-        elif first_w == second_w:
-            wareh = 1
-            max_awail = first_w
-        print(f"Maximum availability: {max_awail} in Warehouse {wareh}")
+def main(operation):
 
-    if errorr is not True:
-        print("\n")
-        order = input("Would you like to order this item? (y/n) ")
-        if order.lower() == "y":
-            both = first_w + second_w
-            howmanyorder = int(input("How many would you like? "))
-            if howmanyorder <= both and howmanyorder > 0:
-                print(f"{howmanyorder} {itemname} have been ordered.\n")
-            elif howmanyorder > both:
-                print("********************************************")
-                print(f"There are not this many available. The maximum amount that can be ordered is {both}")
-                print("********************************************")
-                ordermaximum = input("Would you like to order the maximum available? (y/n) ")
-                if ordermaximum.lower() == "y":
-                    print(f"{both} {itemname} have been ordered.\n")
+    #operation = selecting_operation()
+    stop = False
+    if operation == "1":
+        list_items_on_all_warehouses()
 
-    return f"Searched for items"
-"""
+    elif operation == "2":
+        search_and_order_item()
+
+    elif operation == "3":
+        ordered_dict()
+    elif operation == "4":
+        stop = True
+        pass
+    else:
+        print("*" * 40)
+        print(f"{operation} is not a valid operation!")
+        print("*" * 40)
+
+    if stop is False and parameters['how_much_entries'] < 4:
+        go_again = input("\nWould you like to perform another operation?(y/n) ")
+        if go_again.lower() in ["y", "yes"]:
+            main(selecting_operation()) 
+
 
 parameters['user_name'] = get_user_name()
 greet_user()
 print("\n")
-operation = selecting_operation()
+
+main(selecting_operation())
 
 
-errorr = False
-if operation == "1":
-    list_items_on_all_warehouses()
-
-elif operation == "2":
-    search_and_order_item()
-
-elif operation == "3":
-        
-        categories = OrderedDict()
-        for item in stock:
-            if item["category"] not in categories.keys():
-                categories[item["category"]] = 0
-            categories[item["category"]] += 1
-      
-        num = 1
-        for category, amount in categories.items():
-            print(f"{num}. {category} ({amount})")
-            num += 1
-
-        chosen_number = int(input("Type the number of the category to browse: "))
-        category_list = list(categories.items())
-        chosen_name = category_list[chosen_number - 1][0]
-        print("\n")
-        print(f"List of {chosen_name.lower()}'s available:")
-        for item in stock:
-            if item["category"] == chosen_name:
-                full_name = f"{item['state']} {item['category'].lower()}"
-                print(f"{full_name}, Warehouse {item['warehouse']}")
-
-elif operation == "4":
-    pass
-else:
-    print("*" * 40)
-    print(f"{operation} is not a valid operation!")
-    print("*" * 40)
-
-
-# Thank the user for the visit
 print(f"\nThank you for your visit, {parameters['user_name']}!")
+if parameters['how_much_entries'] > 0:
+    print("\nSession summary: ")
+    for n, summ in enumerate(summary):
+        print(f"\t{n+1}. {summ}")
